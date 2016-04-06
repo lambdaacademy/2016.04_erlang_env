@@ -23,7 +23,7 @@ chmod a+rwx /usr/bin/ovs-docker
 SCRIPT
 
 $get_amoc = <<SCRIPT
-cd /home/vagant
+cd /home/vagrant
 git clone https://github.com/esl/amoc.git
 cd amoc && git checkout fix-for-erlang18
 SCRIPT
@@ -31,10 +31,11 @@ SCRIPT
 $install_amoc = <<SCRIPT
 cd amoc
 sed -i s/\-name/\-sname/g priv/vm.args
-sed -i s/"127.0.0.1"/"173.16.1.100"/g scenarios/mongoose_simple.erl
-make rel
+cp /vagrant/files/app.config priv/app.config
+cp /vagrant/files/mongoose_simple_soe2016.erl scenarios/
 cp /vagrant/files/simple_run.sh .
-chmod +x amoc_simple_run.sh
+make compile
+chmod +x simple_run.sh
 chown -R vagrant: ./
 SCRIPT
 
@@ -43,7 +44,7 @@ cp /vagrant/files/ejabberd.cfg /home/vagrant/
 SCRIPT
 
 $register_mim_users = <<SCRIPT
-for i in `seq 1 10`; do
+for i in `seq 1 100`; do
    docker exec mim ./start.sh "register user_$i localhost password_$i"
 done
 SCRIPT
@@ -55,6 +56,13 @@ SCRIPT
 
 $add_mim_to_network = <<SCRIPT
 ovs-docker add-port ovs-br1 eth1 mim --ipaddress=173.16.1.100/24
+SCRIPT
+
+$wait_for_mim_container = <<SCRIPT
+# until [ "`/usr/bin/docker inspect -f {{.State.Running}} mim`" == "true" ]; do
+#     sleep 0.2;
+# done;
+nc -z -w10 173.16.1.100 5222 || echo "MongooseIM server not started..."
 SCRIPT
 
 def provision_with_shell(node)
@@ -71,10 +79,8 @@ end
 def get_docker_images(node)
   node.vm.provision "docker_images",
                     type: "docker",
-                    images: ["ubuntu:latest",
-                             "mongooseim/mongooseim-docker",
-                             "studzien/amoc",
-                             "sitespeedio/graphite"]
+                    images: [ "mongooseim/mongooseim-docker",
+                              "davidkarlsen/graphite_docker"]
 end
 
 def run_docker_containers(node)
@@ -84,10 +90,13 @@ def run_docker_containers(node)
           args: "-it -v /home/vagrant/ejabberd.cfg:/opt/mongooseim/rel/mongooseim/etc/ejabberd.cfg",
           restart: "no"
     d.run "graphite",
-          image: "sitespeedio/graphite",
-          args: "-it -p 8080:80 -p 2003:2003",
+          image: "davidkarlsen/graphite_docker",
+          args: "-it -p 8080:80 -p 2003:2003 -p 3000:3000",
           restart: "no"
   end
+  node.vm.provision "wait_for_mim_container",
+                    type: "shell",
+                    inline: $wait_for_mim_container
   node.vm.provision "register_mim_users",
                     type: "shell",
                     inline: $register_mim_users

@@ -2,12 +2,13 @@
 
 #!/bin/sh
 
-if [ "$#" -ne 3 ]; then
+if [ "$#" -ne 1 ]; then
     echo "illegal number of parameters"
-    echo 'specify "scenario name" "From" "To"'
-    echo 'for example "mongoose_simple" "1" "2"'
+    # echo 'specify "scenario name" "From" "To"'
+    echo 'specify the name of users'
+    echo 'for example ./simple_run 10'
     exit 1
 fi
 
-erl -config priv/app -env ERL_FULLSWEEP_AFTER 2 -pa ./deps/*/ebin ./ebin -s amoc do $1 $2 $3
+erl -config priv/app -env ERL_FULLSWEEP_AFTER 2 -pa ./deps/*/ebin ./ebin -s amoc do mongoose_simple_soe2016 1 $1
 
