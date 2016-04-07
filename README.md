@@ -15,9 +15,9 @@ The tools used to build the environment:
 5. [Amoc](https://hub.docker.com/r/mongooseim/mongooseim-docker/)
     - to run XMPP clients that stress the server
 6. [OpenVSwitch](http://openvswitch.org/)
-    - to controll the traffic hitting the MongooseIM server by using [OpenFlow](https://www.opennetworking.org/sdn-resources/openflow)
+    - to control the traffic hitting the MongooseIM server by using [OpenFlow](https://www.opennetworking.org/sdn-resources/openflow)
 5. [ovs-docker tool](https://github.com/openvswitch/ovs/blob/master/utilities/ovs-docker)
-    - to setup the netowrking with the containers
+    - to setup the networking with the containers
 6. [Graphite Container](https://github.com/davidkarlsen/graphite_docker)
     - to visualize some metrics
 6. [**LOOM OpenFlow Controller**](http://flowforwarding.github.io/loom/)
@@ -34,10 +34,13 @@ Clone this project, enter its directory and run: `vagrant up`. To login into the
 
 ### Check that things are up and running
 
+
+All the commands above are supposed to be run from the VM.
+
 #### Networking
 
 Check that the machine has:
-* `eth1` interface with IP address of 192.169.0.100 which is reachable from your host machine (as you shuld have vboxnet0 interface with IP address 192.169.0.1)
+* `eth1` interface with IP address of 192.169.0.100 which is reachable from your host machine (as you should have vboxnet0 interface with IP address 192.169.0.1)
 * `ovs-br1` which is the OpenVSwich interface with 173.16.1.1 IP address
 
 Run `ip a` to verify the networking. The output should have the following lines:
@@ -63,7 +66,7 @@ Run `ip a` to verify the networking. The output should have the following lines:
 
 #### Docker containers
 
-Loggin into to and verify that two docker containers: mim with MongooseIM server and graphite with graphite are running:
+ Verify that two docker containers: mim with MongooseIM server and graphite with graphite are running:
 `docker ps`. The output should be similar to the following:
 
 ```shell
@@ -79,7 +82,7 @@ CONTAINER ID        IMAGE                          COMMAND                  CREA
 Check that the 100 users are registered in the `localhost` domain in the server:
 `docker exec mim ./start.sh "registered_users localhost"`
 
-> `docker exec CONTAINTER` invokes a command in the given container`
+> `docker exec CONTAINER` invokes a command in the given container`
 
 Check that the server actually listens on the XMPP port (5222) and is reachable via 173.16.1.100 address:
 `telnet 173.16.1.100 5222`
@@ -96,12 +99,108 @@ ala
 
 #### Graphite
 
-Check that the webinterface of Graphite is accessible on your *host machine* via web browser. Point it to 192.169.0.100:8080. You should see a dashbord like the one below:
+Check that the web interface of Graphite is accessible on your *host machine* via web browser. Point it to 192.169.0.100:8080. You should see a dashboard like the one below:
 
-![alt](img/soe2016_graphite_empy.png)
+![alt](img/soe2016_graphite_empty.png)
 
 #### LOOM OpenFlow Controller
 
 TODO
 
 ## Running a sanity check
+
+All the below commands are invoked in the environment VM (the one provisioned with Vagrant).
+
+Attach to the Erlang shell of MongooseIM server and set the most verbose logging level:
+
+```bash
+vagrant@soe2016:~$ docker exec -it mim ./start.sh debug
+--------------------------------------------------------------------
+
+...
+
+Press 'Enter' to continue
+...
+Erlang/OTP 17 [erts-6.4] [source-2e19e2f] [64-bit] [smp:4:4] [async-threads:10] [hipe] [kernel-poll:false]
+
+Eshell V6.4  (abort with ^G)
+(mongooseim@69896a7e9956)1> ejabberd_loglevel:set(5).
+[{{lager_file_backend,"ejabberd.log"},ok},
+ {lager_console_backend,ok}]
+(mongooseim@69896a7e9956)2>
+BREAK: (a)bort (c)ontinue (p)roc info (i)nfo (l)oaded
+       (v)ersion (k)ill (D)b-tables (d)istribution
+^Cvagrant@soe2016:~$
+```
+
+> -it options passed to the `docker exec` make it possible to open interactive shell with the container
+
+Exit the Erlang shell by double Ctrl+C. Next open another with MongooseIM logs:
+
+```bash
+docker logs -f mim
+```
+
+Finally, start generating XMPP messages with Amoc:
+
+```bash
+vagrant@soe2016:~/amoc$ cd amoc && ./simple_run.sh 10
+Erlang/OTP 18 [erts-7.3] [source-d2a6d81] [64-bit] [smp:4:4] [async-threads:10] [hipe] [kernel-poll:false]
+
+Eshell V7.3  (abort with ^G)
+1> 12:48:19.878 [info] Application lager started on node nonode@nohost
+Setup running ...
+Directories verified. Res = {[ok],[]}
+Setup finished processing hooks ...
+12:48:19.905 [info] Application setup started on node nonode@nohost
+12:48:20.012 [info] Starting reporters with [{reporters,[{exometer_report_graphite,[{prefix,"amoc_node_soe2016"},{host,"127.0.0.1"},{api_key,[]}]}]},{subscribers,[{exometer_report_graphite,[amoc,users],[size],10000,true},{exometer_report_graphite,[erlang,system_info],[port_count,process_count],10000,true},{exometer_report_graphite,[erlang,memory],[total,processes,processes_used,system,binary,ets],10000,true},{select,{[{{[amoc,times,'_'],'_','_'},[],['$_']}],exometer_report_graphite,[mean,min,max,median,95,99,999],10000,true}},{select,{[{{[amoc,counters,'_'],'_','_'},[],['$_']}],exometer_report_graphite,[one,count],10000,true}}]}]
+12:48:20.013 [info] Application exometer_core started on node nonode@nohost
+12:48:20.017 [info] Exometer Graphite Reporter; Opts: [{prefix,"amoc_node_soe2016"},{host,"127.0.0.1"},{api_key,[]}]
+12:48:20.029 [info] Application exometer started on node nonode@nohost
+12:48:20.058 [info] Application crypto started on node nonode@nohost
+12:48:20.081 [info] Application asn1 started on node nonode@nohost
+12:48:20.081 [info] Application public_key started on node nonode@nohost
+12:48:20.126 [info] Application ssl started on node nonode@nohost
+12:48:20.142 [info] Application lhttpc started on node nonode@nohost
+12:48:20.149 [info] Application amoc started on node nonode@nohost
+12:48:20.151 [info] init some metrics
+12:48:20.152 [info] starting scenario begin_id=1, end_id=20, length=20
+12:48:21.027 [info] checker
+12:48:21.800 [info] checker
+12:48:30.438 [info] Client <<"user_1">> has sent 2 messages so far
+12:48:30.438 [info] Client <<"user_2">> has sent 2 messages so far
+12:48:30.495 [info] Client <<"user_3">> has sent 2 messages so far
+```
+
+The number passed as the second argument to the `./simple_run.sh` indicates the number of simulated XMPP clients. Now, as your clients are sending messages, Graphite will show you how many messages are sent from particular client. Point your browser on to http://192.169.1.100:8080 and enable a plot for `amoc_node_soe2016.amoc.counters.messages_sent.user_4`:
+
+![alt](img/soe2016_graphite_user_metric.png)
+
+The improve your experience click `Auto-Refresh` button and select a time range to the past 5 minutes. Finally, click Graph Data and edit the filter so that it includes all the users. Click Edit and then type in then change `user_4` to `*`:
+
+![alt](img/soe2016_graphite_time_range.png)
+
+The resulting filter is: `amoc_node_soe2016.amoc.counters.messages_sent.*.one`. Apart from that, change timezone - navigate to Graph Options -> X-Axis -> Time zone and enter `Europe/Warsaw`. Should should end up with the following graph showing how many messages was sent by each of the 10 clients started in my example scenario:
+
+![alt](img/soe2016_graphite_all_clients.png)
+
+> `count and one under each user are so called data points. The first one idicates the total number sent by a client from the beginning, while the latter one refers to a given time span. By default, each value on the graph indicates how many messages were sent by the client in the last 60 seconds, and the values are reported every 5 seconds from Amoc.
+
+Because each of the client sends messages at different rates the lines for particular users differ. Additionally, one of every 10 clients is not sending messages as it is only receiving them.
+
+The graph will be useful when we will be implementing the intrusion detection system that will be cutting off clients violating the allowed messages rate.
+
+One more thing worth checking, is to see open TCP connections held by the XMPP clients simulated in Amoc:
+```bash
+vagrant@soe2016:~$ netstat -tn | grep 5222
+tcp        0      0 173.16.1.1:54824        173.16.1.100:5222       ESTABLISHED
+tcp        0      0 173.16.1.1:54935        173.16.1.100:5222       ESTABLISHED
+tcp        0      0 173.16.1.1:37586        173.16.1.100:5222       ESTABLISHED
+tcp        0      0 173.16.1.1:53802        173.16.1.100:5222       ESTABLISHED
+tcp        0      0 173.16.1.1:53616        173.16.1.100:5222       ESTABLISHED
+tcp        0      0 173.16.1.1:39622        173.16.1.100:5222       ESTABLISHED
+tcp        0      0 173.16.1.1:46035        173.16.1.100:5222       ESTABLISHED
+tcp        0      0 173.16.1.1:58434        173.16.1.100:5222       ESTABLISHED
+tcp        0      0 173.16.1.1:33306        173.16.1.100:5222       ESTABLISHED
+tcp        0      0 173.16.1.1:36149        173.16.1.100:5222       ESTABLISHED
+```
