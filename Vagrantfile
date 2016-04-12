@@ -52,7 +52,7 @@ SCRIPT
 $configure_network = <<SCRIPT
 ovs-vsctl add-br ovs-br1
 ifconfig ovs-br1 173.16.1.1 netmask 255.255.255.0 up
-ovs-vsctl set ovs-br1 protocols=openflow13
+ovs-vsctl set bridge ovs-br1 protocols=OpenFlow13
 ovs-vsctl set-controller ovs-br1 tcp:127.0.0.1:6653
 SCRIPT
 

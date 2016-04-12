@@ -57,7 +57,7 @@ Clone this project, enter its directory and run: `vagrant up`. To login into the
 ### Check that things are up and running
 
 
-All the commands above are supposed to be run from the VM.
+All the commands  above are supposed to be run from the VM, unless otherwise stated.
 
 #### Networking
 
@@ -83,7 +83,14 @@ Run `ip a` to verify the networking. The output should have the following lines:
    inet6 fe80::74a6:1cff:fe0d:d989/64 scope link
        valid_lft forever preferred_lft forever
 ...
+
 ```
+
+The `eth1` interface should be reachable from your host. Run ping command **from your host** (not the VM this time!):
+
+`ping -c3 192.169.0.100`
+
+> The above command work for UNIX-like systems.
 
 #### OpenVSwitch
 
@@ -104,7 +111,7 @@ c7c4ac72-8a43-4f39-a517-07edcd3ef68c
 
 ```
 
-You should see that it is set to connect with a `controller` running on local host (127.0.0.1) and port 6653. This indicates that the switch has the OpenFlow enabled. However, if the switch fail to connect with the controller and falls back do regular MAC-learning switch and just work. Once it connects to the controller, it starts relying on it and the controller becomes responsible for setting appropriate forwarding table.
+You should see that it is set to connect with a `controller` running on local host (127.0.0.1) and port 6653. This indicates that the switch has the OpenFlow enabled. However, if the switch fails to connect with the controller and falls back do regular [MAC-learning](https://www.youtube.com/watch?v=WqjpBn-0oI4) switch and just work. Once it connects to the controller, it starts relying on it and the controller becomes responsible for setting appropriate forwarding table.
 
 > Look at the `Controller Failure Setting` paragraph in the ovs-vsctl documentation for more information.
 
@@ -130,7 +137,7 @@ vagrant@soe2016:~$
 
 #### Docker containers
 
- Verify that two docker containers: mim with MongooseIM server and graphite with graphite are running:
+ Verify that two docker containers: **mim** with MongooseIM server and **graphite** with graphite are running:
 `docker ps`. The output should be similar to the following:
 
 ```shell
@@ -163,7 +170,7 @@ ala
 
 #### Graphite
 
-Check that the web interface of Graphite is accessible on your *host machine* via web browser. Point it to 192.169.0.100:8080. You should see a dashboard like the one below:
+Check that the web interface of Graphite is accessible on your *host machine* via web browser. Point it to http://192.169.0.100 You should see a dashboard like the one below:
 
 ![alt](img/soe2016_graphite_empty.png)
 
@@ -171,7 +178,7 @@ Check that the web interface of Graphite is accessible on your *host machine* vi
 
 All the below commands are invoked in the environment VM (the one provisioned with Vagrant).
 
-Attach to the Erlang shell of MongooseIM server and set the most verbose logging level:
+Attach to the Erlang shell of MongooseIM server and set the log level to INFO (`ejabberd_loglevel:set(4).`):
 
 ```bash
 vagrant@soe2016:~$ docker exec -it mim ./start.sh debug
@@ -183,7 +190,7 @@ Press 'Enter' to continue
 Erlang/OTP 17 [erts-6.4] [source-2e19e2f] [64-bit] [smp:4:4] [async-threads:10] [hipe] [kernel-poll:false]
 
 Eshell V6.4  (abort with ^G)
-(mongooseim@69896a7e9956)1> ejabberd_loglevel:set(5).
+(mongooseim@69896a7e9956)1> ejabberd_loglevel:set(4).
 [{{lager_file_backend,"ejabberd.log"},ok},
  {lager_console_backend,ok}]
 (mongooseim@69896a7e9956)2>
@@ -194,16 +201,16 @@ BREAK: (a)bort (c)ontinue (p)roc info (i)nfo (l)oaded
 
 > -it options passed to the `docker exec` make it possible to open interactive shell in the container
 
-Exit the Erlang shell by double Ctrl+C. Next open another with MongooseIM logs:
+Exit the Erlang shell by double Ctrl+C. Next attach to the container stdou to see MongooseIM logs:
 
 ```bash
 docker logs -f mim
 ```
 
-Finally, start generating XMPP messages with Amoc:
+Finally, in another console, start generating XMPP messages with Amoc:
 
 ```bash
-vagrant@soe2016:~/amoc$ cd amoc && ./simple_run.sh 10
+vagrant@soe2016:~$ cd amoc && ./simple_run.sh 10
 Erlang/OTP 18 [erts-7.3] [source-d2a6d81] [64-bit] [smp:4:4] [async-threads:10] [hipe] [kernel-poll:false]
 
 Eshell V7.3  (abort with ^G)
@@ -231,15 +238,15 @@ Setup finished processing hooks ...
 12:48:30.495 [info] Client <<"user_3">> has sent 2 messages so far
 ```
 
-The number passed as the second argument to the `./simple_run.sh` indicates the number of simulated XMPP clients. Now, as your clients are sending messages, Graphite will show you how many messages are sent from particular client. Point your browser on to http://192.169.1.100:8080 and enable a plot for `amoc_node_soe2016.amoc.counters.messages_sent.user_4`:
+The number passed as the second argument to the `./simple_run.sh` indicates the number of simulated XMPP clients. Now, as your clients are sending messages, Graphite will show you how many messages are sent from particular client. Point your browser to http://192.169.1.100:8080 and enable a plot for `amoc_node_soe2016.amoc.counters.messages_sent.user_4`:
 
 ![alt](img/soe2016_graphite_user_metric.png)
 
-The improve your experience click `Auto-Refresh` button and select a time range to the past 5 minutes. Finally, click Graph Data and edit the filter so that it includes all the users. Click Edit and then type in then change `user_4` to `*`:
+The improve your experience click `Auto-Refresh` button and select a time range of past 5 minutes (The clock button in the **Grap Composer**). Finally, click Graph Data and edit the filter so that it includes all the users. Click Edit and then type in then change `user_4` to `*`:
 
 ![alt](img/soe2016_graphite_time_range.png)
 
-The resulting filter is: `amoc_node_soe2016.amoc.counters.messages_sent.*.one`. Apart from that, change timezone - navigate to Graph Options -> X-Axis -> Time zone and enter `Europe/Warsaw`. Should should end up with the following graph showing how many messages was sent by each of the 10 clients started in my example scenario:
+The resulting filter is: `amoc_node_soe2016.amoc.counters.messages_sent.*.one`. Apart from that, change timezone - navigate to Graph Options -> X-Axis -> Time zone and enter `Europe/Warsaw`. You should end up with the following graph showing how many messages were sent by each of the 10 clients started in this example scenario:
 
 ![alt](img/soe2016_graphite_all_clients.png)
 
@@ -249,7 +256,7 @@ Because each of the client sends messages at different rates the lines for parti
 
 The graph will be useful when we will be implementing the intrusion detection system that will be cutting off clients violating the allowed messages rate.
 
-One more thing worth checking, is to see open TCP connections held by the XMPP clients simulated in Amoc:
+One more thing worth checking is to see open TCP connections held by the XMPP clients simulated in Amoc (run in another shell):
 ```bash
 vagrant@soe2016:~$ netstat -tn | grep 5222
 tcp        0      0 173.16.1.1:54824        173.16.1.100:5222       ESTABLISHED
@@ -262,4 +269,6 @@ tcp        0      0 173.16.1.1:46035        173.16.1.100:5222       ESTABLISHED
 tcp        0      0 173.16.1.1:58434        173.16.1.100:5222       ESTABLISHED
 tcp        0      0 173.16.1.1:33306        173.16.1.100:5222       ESTABLISHED
 tcp        0      0 173.16.1.1:36149        173.16.1.100:5222       ESTABLISHED
+vagrant@soe2016:~$ netstat -tn | grep 5222 | wc -l
+10
 ```
