@@ -1,3 +1,25 @@
+# Environment for XMPP OpenFlow Controller
+
+This is an environment for testing [XMPP Controller](https://github.com/lambdaacademy/2016.04_erlang).
+
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-generate-toc again -->
+**Table of Contents**
+
+- [Environment for XMPP OpenFlow Controller](#environment-for-xmpp-openflow-controller)
+    - [Setting up the environment](#setting-up-the-environment)
+        - [Environment overview](#environment-overview)
+        - [Build and provision the machine](#build-and-provision-the-machine)
+        - [Check that things are up and running](#check-that-things-are-up-and-running)
+            - [Networking](#networking)
+            - [Docker containers](#docker-containers)
+            - [MongooseIM](#mongooseim)
+            - [Graphite](#graphite)
+            - [LOOM OpenFlow Controller](#loom-openflow-controller)
+    - [Running a sanity check](#running-a-sanity-check)
+
+<!-- markdown-toc end -->
+
+
 ## Setting up the environment
 
 The environment is based on Vagrant and Virtualbox so you need these two to proceed.
@@ -62,7 +84,49 @@ Run `ip a` to verify the networking. The output should have the following lines:
        valid_lft forever preferred_lft forever
 ...
 ```
-       
+
+#### OpenVSwitch
+
+Check the switch configuration using the [ovs-vsctl](http://openvswitch.org/support/dist-docs/ovs-vsctl.8.txt) command:
+
+```bash
+vagrant@soe2016:~$ sudo ovs-vsctl show
+c7c4ac72-8a43-4f39-a517-07edcd3ef68c
+    Bridge "ovs-br1"
+        Controller "tcp:127.0.0.1:6653"
+            is_connected: true
+        Port "1566fbdcf7ce4_l"
+            Interface "1566fbdcf7ce4_l"
+        Port "ovs-br1"
+            Interface "ovs-br1"
+                type: internal
+    ovs_version: "2.0.2"
+
+```
+
+You should see that it is set to connect with a `controller` running on local host (127.0.0.1) and port 6653. This indicates that the switch has the OpenFlow enabled. However, if the switch fail to connect with the controller and falls back do regular MAC-learning switch and just work. Once it connects to the controller, it starts relying on it and the controller becomes responsible for setting appropriate forwarding table.
+
+> Look at the `Controller Failure Setting` paragraph in the ovs-vsctl documentation for more information.
+
+To query the switch for the current OpenFlow configuration you can use [ovs-ofctl](http://openvswitch.org/support/dist-docs/ovs-ofctl.8.txt):
+
+```bash
+vagrant@soe2016:~$ sudo ovs-ofctl show -O OpenFlow13 ovs-br1
+OFPT_FEATURES_REPLY (OF1.3) (xid=0x2): dpid:000056bf2e255349
+n_tables:254, n_buffers:256
+capabilities: FLOW_STATS TABLE_STATS PORT_STATS QUEUE_STATS
+OFPT_GET_CONFIG_REPLY (OF1.3) (xid=0x4): frags=normal miss_send_len=0
+```
+
+To understand that configuration, have a look at the [OpenFlow Specification 1.3.2](https://www.opennetworking.org/images/stories/downloads/sdn-resources/onf-specifications/openflow/openflow-spec-v1.3.0.pdf).
+
+To make sure, that the OpenFlow forwarding table is empty, you can run the following command:
+
+```bash
+vagrant@soe2016:~$ sudo ovs-ofctl dump-flows ovs-br1 --protocols=OpenFlow13
+OFPST_FLOW reply (OF1.3) (xid=0x2):
+vagrant@soe2016:~$
+```
 
 #### Docker containers
 
@@ -103,10 +167,6 @@ Check that the web interface of Graphite is accessible on your *host machine* vi
 
 ![alt](img/soe2016_graphite_empty.png)
 
-#### LOOM OpenFlow Controller
-
-TODO
-
 ## Running a sanity check
 
 All the below commands are invoked in the environment VM (the one provisioned with Vagrant).
@@ -115,7 +175,6 @@ Attach to the Erlang shell of MongooseIM server and set the most verbose logging
 
 ```bash
 vagrant@soe2016:~$ docker exec -it mim ./start.sh debug
---------------------------------------------------------------------
 
 ...
 
@@ -133,7 +192,7 @@ BREAK: (a)bort (c)ontinue (p)roc info (i)nfo (l)oaded
 ^Cvagrant@soe2016:~$
 ```
 
-> -it options passed to the `docker exec` make it possible to open interactive shell with the container
+> -it options passed to the `docker exec` make it possible to open interactive shell in the container
 
 Exit the Erlang shell by double Ctrl+C. Next open another with MongooseIM logs:
 
@@ -184,7 +243,7 @@ The resulting filter is: `amoc_node_soe2016.amoc.counters.messages_sent.*.one`. 
 
 ![alt](img/soe2016_graphite_all_clients.png)
 
-> `count and one under each user are so called data points. The first one idicates the total number sent by a client from the beginning, while the latter one refers to a given time span. By default, each value on the graph indicates how many messages were sent by the client in the last 60 seconds, and the values are reported every 5 seconds from Amoc.
+> `count` and `one` under each user are so called data points. The first one idicates the total number of messages sent by a client from the beginning, while the latter one refers to a given time span. By default, each value on the graph indicates how many messages were sent by the client in the last 60 seconds, and the values are reported every 5 seconds from Amoc.
 
 Because each of the client sends messages at different rates the lines for particular users differ. Additionally, one of every 10 clients is not sending messages as it is only receiving them.
 
