@@ -272,3 +272,28 @@ tcp        0      0 173.16.1.1:36149        173.16.1.100:5222       ESTABLISHED
 vagrant@soe2016:~$ netstat -tn | grep 5222 | wc -l
 10
 ```
+
+## Known issues
+
+After you powerdown your VM the docker containers with MongooseIM and Graphite will be brought down to. Thus after starting the VMs again you have to start them and reconfigure the networking. First make sure the containers are not running:
+
+`docker ps`.
+
+Then start them:
+```bash
+docker start mim
+docker start graphite`
+```
+
+Finally reconfigure the networking for the mim container. Run either (from the VM):
+
+```bash
+ovs-docker del-port ovs-br1 eth1 mim
+ovs-docker add-port ovs-br1 eth1 mim --ipaddress=173.16.1.100/24
+```
+
+or (from the host OS):
+
+```bash
+vagrant provision --provision-with reconfigure_mim_network
+```

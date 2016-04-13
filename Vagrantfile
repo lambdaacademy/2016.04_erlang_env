@@ -56,6 +56,11 @@ ovs-vsctl set bridge ovs-br1 protocols=OpenFlow13
 ovs-vsctl set-controller ovs-br1 tcp:127.0.0.1:6653
 SCRIPT
 
+$reconfigure_mim_network = <<SCRIPT
+ovs-docker del-port ovs-br1 eth1 mim
+ovs-docker add-port ovs-br1 eth1 mim --ipaddress=173.16.1.100/24
+SCRIPT
+
 $add_mim_to_network = <<SCRIPT
 ovs-docker add-port ovs-br1 eth1 mim --ipaddress=173.16.1.100/24
 SCRIPT
