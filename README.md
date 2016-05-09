@@ -282,18 +282,13 @@ After you powerdown your VM the docker containers with MongooseIM and Graphite w
 Then start them:
 ```bash
 docker start mim
-docker start graphite`
+docker start graphite
 ```
 
-Finally reconfigure the networking for the mim container. Run either (from the VM):
+Finally reconfigure the networking for the mim container:
 
 ```bash
-ovs-docker del-port ovs-br1 eth1 mim
-ovs-docker add-port ovs-br1 eth1 mim --ipaddress=173.16.1.100/24
-```
-
-or (from the host OS):
-
-```bash
-vagrant provision --provision-with reconfigure_mim_network
+sudo ip addr add 173.16.1.1/24 dev ovs-br1
+sudo ovs-docker del-port ovs-br1 eth1 mim
+sudo ovs-docker add-port ovs-br1 eth1 mim --ipaddress=173.16.1.100/24
 ```
