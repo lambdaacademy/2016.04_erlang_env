@@ -52,7 +52,7 @@ The tools used to build the environment:
 
 ### Build and provision the machine ###
 
-Clone this project, enter its directory and run: `vagrant up`. To login into the machine you can use `vagrant ssh`. To suspend it invoke `vagrant suspend` - it can be woken up with `vagrant up`.
+Clone this project, enter its directory and run: `make vagrant-plugins`. This command will install vagrant-hostmanager, vagrant-git and vagrant-vbguest. After it succeeds, run `vagrant up`. To login into the machine you can use `vagrant ssh`. To suspend it invoke `vagrant suspend` - it can be woken up with `vagrant up`.
 
 ### Check that things are up and running
 
@@ -170,7 +170,7 @@ ala
 
 #### Graphite
 
-Check that the web interface of Graphite is accessible on your *host machine* via web browser. Point it to http://192.169.0.100 You should see a dashboard like the one below:
+Check that the web interface of Graphite is accessible on your *host machine* via web browser. Point it to http://192.169.1.100:8080 You should see a dashboard like the one below:
 
 ![alt](img/soe2016_graphite_empty.png)
 
