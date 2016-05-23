@@ -11,11 +11,13 @@ This is an environment for testing [XMPP Controller](https://github.com/lambdaac
         - [Build and provision the machine](#build-and-provision-the-machine)
         - [Check that things are up and running](#check-that-things-are-up-and-running)
             - [Networking](#networking)
+            - [OpenVSwitch](#openvswitch)
             - [Docker containers](#docker-containers)
             - [MongooseIM](#mongooseim)
             - [Graphite](#graphite)
-            - [LOOM OpenFlow Controller](#loom-openflow-controller)
+            - [Graphana](#graphana)
     - [Running a sanity check](#running-a-sanity-check)
+    - [Known issues](#known-issues)
 
 <!-- markdown-toc end -->
 
@@ -170,9 +172,15 @@ ala
 
 #### Graphite
 
-Check that the web interface of Graphite is accessible on your *host machine* via web browser. Point it to http://192.169.0.100 You should see a dashboard like the one below:
+Check that the web interface of Graphite is accessible on your *host machine* via web browser. Point it to http://192.169.0.100:8080 You should see a dashboard like the one below:
 
 ![alt](img/soe2016_graphite_empty.png)
+
+#### Graphana
+
+Check that the web interface of Grapana is accessible on your *host machine* via web browser. Point it to http://192.169.0.100:3000. Following instructions [here](http://docs.grafana.org/reference/export_import/) import a dasbord from using [xmpp_ofc_graphana_dashboard.json](files/xmpp_ofc_graphana_dashboard.json). When running the sanity check the dashboard looks like the following:
+
+![alt](img/soe2016_graphana.png)
 
 ## Running a sanity check
 
