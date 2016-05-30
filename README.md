@@ -197,6 +197,11 @@ by the controller in the last 10 seconds
 * "Monitored/Blocked users in the last minute" - shows the number of users that
 the controller started monitoring/blocking in the last 10 seconds
 
+If having problems with missing data source, go to Data Sources -> Add new and configure new
+data source as shown below:
+
+![alt](img/soe2016_graphana_data_source.png)
+
 ## Running a sanity check
 
 All the below commands are invoked in the environment VM (the one provisioned with Vagrant).
