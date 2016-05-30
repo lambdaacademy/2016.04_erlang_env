@@ -15,7 +15,7 @@
 
 -define(HOST, <<"localhost">>). %% The virtual host served by the server
 -define(SERVER_IPS, {<<"173.16.1.100">>}). %% Tuple of servers, for example {<<"10.100.0.21">>, <<"10.100.0.22">>}
--define(CHECKER_SESSIONS_INDICATOR, 10). %% How often a checker session should be generated
+-define(CHECKER_SESSIONS_INDICATOR, 2). %% How often a checker session should be generated
 -define(SLEEP_TIME_AFTER_SCENARIO, 10000). %% wait 10s after scenario before disconnecting
 -define(NUMBER_OF_PREV_NEIGHBOURS, 4).
 -define(NUMBER_OF_NEXT_NEIGHBOURS, 4).
@@ -25,22 +25,38 @@
 
 -export([start/1]).
 -export([init/0]).
--export([log_sent_messages/1]).
 
--define(MESSAGES_CT, [amoc, counters, messages_sent]).
--define(MESSAGES_CT_USER(Name), [amoc, counters, messages_sent,
-                                 list_to_atom(binary_to_list(Name))]).
+-define(MESSAGES_SENT_CT, [amoc, counters, messages_sent]).
+-define(MESSAGES_RECEIVED_CT, [amoc, counters, messages_received]).
 -define(MESSAGE_TTD_CT, [amoc, times, message_ttd]).
+
+%% -define(MESSAGES_SENT_CT_USER(Name),
+%%         [amoc, counters, messages_sent,
+%%          list_to_atom(binary_to_list(Name))]).
+%% -define(MESSAGES_RECEIVED_CT_USER(Name),
+%%         [amoc, counters, messages_received,
+%%          list_to_atom(binary_to_list(Name))]).
 
 -type binjid() :: binary().
 
 -spec init() -> ok.
 init() ->
     lager:info("init some metrics"),
-    exometer:new(?MESSAGES_CT, spiral),
-    exometer_report:subscribe(exometer_report_graphite, ?MESSAGES_CT, [one, count], 10000),
+    exometer:new(?MESSAGES_SENT_CT, spiral),
+    exometer_report:subscribe(exometer_report_graphite,
+                              ?MESSAGES_SENT_CT,
+                              [one, count],
+                              10000),
+    exometer:new(?MESSAGES_RECEIVED_CT, spiral),
+    exometer_report:subscribe(exometer_report_graphite,
+                              ?MESSAGES_RECEIVED_CT,
+                              [one, count],
+                              10000),
     exometer:new(?MESSAGE_TTD_CT, histogram),
-    exometer_report:subscribe(exometer_report_graphite, ?MESSAGE_TTD_CT, [mean, min, max, median, 95, 99, 999], 10000),
+    exometer_report:subscribe(exometer_report_graphite,
+                              ?MESSAGE_TTD_CT,
+                              [mean, min, max, median, 95, 99, 999],
+                              10000),
     ok.
 
 -spec user_spec(binary(), binary(), binary()) -> escalus_users:user_spec().
@@ -66,7 +82,7 @@ start(MyId) ->
     my_seed(),
     Cfg = make_user(MyId, <<"res1">>),
 
-    setup_per_user_sent_messages_metric(Cfg),
+    %% setup_per_user_sent_messages_metric(Cfg),
     
     IsChecker = MyId rem ?CHECKER_SESSIONS_INDICATOR == 0,
 
@@ -89,19 +105,12 @@ start(MyId) ->
     escalus_connection:stop(Client).
 
 -spec do(boolean(), amoc_scenario:user_id(), escalus:client(), term()) -> any().
-do(false, MyId, Client, Cfg) ->
+do(false, MyId, Client, _Cfg) ->
     escalus_connection:set_filter_predicate(Client, none),
-
     send_presence_available(Client),
     timer:sleep(5000),
-
-    NeighbourIds = lists:delete(MyId, lists:seq(max(1,MyId-?NUMBER_OF_PREV_NEIGHBOURS),
-                                                MyId+?NUMBER_OF_NEXT_NEIGHBOURS)),
-    MessageInterval = message_interval(),
-    ExometerUpdateFn = exometer_update_fn(Cfg),
-    Ref = schedule_logging(Cfg),
-    send_messages_many_times(Client, MessageInterval, NeighbourIds, ExometerUpdateFn),
-    cancel_logging(Ref);
+    NeighbourIds = [MyId+1],
+    send_messages_many_times(Client, message_interval(), NeighbourIds); 
 do(_Other, _MyId, Client, _) ->
     lager:info("checker"),
     send_presence_available(Client),
@@ -113,6 +122,7 @@ receive_forever(Client) ->
     Now = usec:from_now(os:timestamp()),
     case Stanza of
         #xmlel{name = <<"message">>, attrs=Attrs} ->
+            exometer:update(?MESSAGES_RECEIVED_CT, 1),
             case lists:keyfind(<<"timestamp">>, 1, Attrs) of
                 {_, Sent} ->
                     TTD = (Now - binary_to_integer(Sent)),
@@ -136,25 +146,30 @@ send_presence_unavailable(Client) ->
     Pres = escalus_stanza:presence(<<"unavailable">>),
     escalus_connection:send(Client, Pres).
 
--spec send_messages_many_times(escalus:client(), timeout(), [binjid()], term()) -> ok.
-send_messages_many_times(Client, MessageInterval, NeighbourIds, ExometerUpdateFn) ->
+-spec send_messages_many_times(escalus:client(), timeout(), [binjid()]) -> ok.
+send_messages_many_times(Client, MessageInterval, NeighbourIds) ->
     S = fun(_) ->
-                send_messages_to_neighbors(Client, NeighbourIds, MessageInterval, ExometerUpdateFn)
+                send_messages_to_neighbors(Client,
+                                           NeighbourIds,
+                                           MessageInterval)
         end,
     lists:foreach(S, lists:seq(1, ?NUMBER_OF_SEND_MESSAGE_REPEATS)).
 
 
--spec send_messages_to_neighbors(escalus:client(), [binjid()], timeout(), term()) -> list().
-send_messages_to_neighbors(Client, TargetIds, SleepTime, ExometerUpdateFn) ->
-    [send_message(Client, make_jid(TargetId), SleepTime, ExometerUpdateFn)
+-spec send_messages_to_neighbors(escalus:client(), [binjid()], timeout()) -> list().
+send_messages_to_neighbors(Client, TargetIds, SleepTime) ->
+    [send_message(Client, make_jid(TargetId), SleepTime)
      || TargetId <- TargetIds].
 
--spec send_message(escalus:client(), binjid(), timeout(), term()) -> ok.
-send_message(Client, ToId, SleepTime, ExometerUpdateFn) ->
+-spec send_message(escalus:client(), binjid(), timeout()) -> ok.
+send_message(Client, ToId, SleepTime) ->
     MsgIn = make_message(ToId),
     TimeStamp = integer_to_binary(usec:from_now(os:timestamp())),
-    escalus_connection:send(Client, escalus_stanza:setattr(MsgIn, <<"timestamp">>, TimeStamp)),
-    ExometerUpdateFn(),
+    escalus_connection:send(Client,
+                            escalus_stanza:setattr(MsgIn,
+                                                   <<"timestamp">>,
+                                                   TimeStamp)),
+    exometer:update(?MESSAGES_SENT_CT, 1),
     timer:sleep(SleepTime).
 
 -spec make_message(binjid()) -> exml:element().
@@ -181,33 +196,43 @@ my_seed() ->
                 erlang:monotonic_time(),
                 erlang:unique_integer()).
 
-setup_per_user_sent_messages_metric(Cfg) ->
-    Username = proplists:get_value(username, Cfg),
-    exometer:new(?MESSAGES_CT_USER(Username), spiral),
-    exometer_report:subscribe(exometer_report_graphite,
-                              ?MESSAGES_CT_USER(Username),
-                              [one, count],
-                              5000).
-
 message_interval() ->
     1000 + random:uniform(5000).
 
-exometer_update_fn(Cfg) ->
-    Username = proplists:get_value(username, Cfg),
-    fun() ->
-            exometer:update(?MESSAGES_CT, 1),
-            exometer:update(?MESSAGES_CT_USER(Username), 1)
-    end.
+%% setup_per_user_sent_messages_metric(Cfg) ->
+%%     Username = proplists:get_value(username, Cfg),
+%%     exometer:new(?MESSAGES_CT_USER(Username), spiral),
+%%     exometer_report:subscribe(exometer_report_graphite,
+%%                               ?MESSAGES_CT_USER(Username),
+%%                               [one, count],
+%%                               5000).
 
-schedule_logging(Cfg) ->
-    Username = proplists:get_value(username, Cfg),
-    {ok, TRef} = timer:apply_interval(5000, ?MODULE, log_sent_messages, [Username]),
-    TRef.
+%% setup_per_user_received_messages_metric(Cfg) ->
+%%     Username = proplists:get_value(username, Cfg),
+%%     exometer:new(?MESSAGES_CT_USER(Username), spiral),
+%%     exometer_report:subscribe(exometer_report_graphite,
+%%                               ?MESSAGES_CT_USER(Username),
+%%                               [one, count],
+%%                               5000).
 
-cancel_logging(Ref) ->
-    {ok, cancel} = timer:cancel(Ref).
 
--spec log_sent_messages(binary()) -> ok.
-log_sent_messages(Username) ->
-    {ok, [{count, N}]} = exometer:get_value(?MESSAGES_CT_USER(Username), [count]), 
-    lager:info("Client ~p has sent ~p messages so far", [Username, N]).
+
+%% exometer_update_fn(Cfg) ->
+%%     Username = proplists:get_value(username, Cfg),
+%%     fun() ->
+%%             exometer:update(?MESSAGES_CT, 1),
+%%             exometer:update(?MESSAGES_CT_USER(Username), 1)
+%%     end.
+
+%% schedule_logging(Cfg) ->
+%%     Username = proplists:get_value(username, Cfg),
+%%     {ok, TRef} = timer:apply_interval(5000, ?MODULE, log_sent_messages, [Username]),
+%%     TRef.
+
+%% cancel_logging(Ref) ->
+%%     {ok, cancel} = timer:cancel(Ref).
+
+%% -spec log_sent_messages(binary()) -> ok.
+%% log_sent_messages(Username) ->
+%%     {ok, [{count, N}]} = exometer:get_value(?MESSAGES_CT_USER(Username), [count]), 
+%%     lager:info("Client ~p has sent ~p messages so far", [Username, N]).

@@ -7,75 +7,13 @@
   "timezone": "browser",
   "editable": true,
   "hideControls": false,
-  "sharedCrosshair": false,
+  "sharedCrosshair": true,
   "rows": [
     {
       "collapse": false,
       "editable": true,
       "height": "250px",
       "panels": [
-        {
-          "aliasColors": {},
-          "bars": false,
-          "datasource": "xmpp_ofc",
-          "editable": true,
-          "error": false,
-          "fill": 1,
-          "grid": {
-            "leftLogBase": 1,
-            "leftMax": null,
-            "leftMin": null,
-            "rightLogBase": 1,
-            "rightMax": null,
-            "rightMin": null,
-            "threshold1": null,
-            "threshold1Color": "rgba(216, 200, 27, 0.27)",
-            "threshold2": null,
-            "threshold2Color": "rgba(234, 112, 112, 0.22)"
-          },
-          "id": 1,
-          "legend": {
-            "avg": false,
-            "current": false,
-            "max": false,
-            "min": false,
-            "show": true,
-            "total": false,
-            "values": false
-          },
-          "lines": true,
-          "linewidth": 2,
-          "links": [],
-          "nullPointMode": "connected",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "span": 4,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "hide": false,
-              "target": "amoc_node_soe2016.amoc.users.size"
-            }
-          ],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Amoc Users",
-          "tooltip": {
-            "shared": true,
-            "value_type": "cumulative"
-          },
-          "type": "graph",
-          "x-axis": true,
-          "y-axis": true,
-          "y_formats": [
-            "short",
-            "short"
-          ]
-        },
         {
           "aliasColors": {},
           "bars": false,
@@ -114,7 +52,7 @@
           "points": false,
           "renderer": "flot",
           "seriesOverrides": [],
-          "span": 8,
+          "span": 6,
           "stack": false,
           "steppedLine": false,
           "targets": [
@@ -129,7 +67,69 @@
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Connections",
+          "title": "Connections setups/failures/10s",
+          "tooltip": {
+            "shared": true,
+            "value_type": "cumulative"
+          },
+          "type": "graph",
+          "x-axis": true,
+          "y-axis": true,
+          "y_formats": [
+            "short",
+            "short"
+          ]
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "datasource": "xmpp_ofc",
+          "editable": true,
+          "error": false,
+          "fill": 1,
+          "grid": {
+            "leftLogBase": 1,
+            "leftMax": null,
+            "leftMin": null,
+            "rightLogBase": 1,
+            "rightMax": null,
+            "rightMin": null,
+            "threshold1": null,
+            "threshold1Color": "rgba(216, 200, 27, 0.27)",
+            "threshold2": null,
+            "threshold2Color": "rgba(234, 112, 112, 0.22)"
+          },
+          "id": 1,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "connected",
+          "percentage": false,
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "span": 6,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "hide": false,
+              "target": "amoc_node_soe2016.amoc.users.size"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Amoc Users",
           "tooltip": {
             "shared": true,
             "value_type": "cumulative"
@@ -190,18 +190,93 @@
           "points": false,
           "renderer": "flot",
           "seriesOverrides": [],
-          "span": 12,
+          "span": 6,
           "stack": false,
           "steppedLine": false,
           "targets": [
             {
-              "target": "aliasByNode(amoc_node_soe2016.amoc.counters.messages_sent.*.one, 4)",
-              "textEditor": false
+              "target": "amoc_node_soe2016.amoc.counters.messages_sent.one",
+              "textEditor": true
+            },
+            {
+              "hide": false,
+              "target": "amoc_node_soe2016.amoc.counters.messages_received.one",
+              "textEditor": true
             }
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Amoc Users Messages/Minute",
+          "title": "Amoc Users Messages/10s",
+          "tooltip": {
+            "shared": true,
+            "value_type": "cumulative"
+          },
+          "type": "graph",
+          "x-axis": true,
+          "y-axis": true,
+          "y_formats": [
+            "short",
+            "short"
+          ]
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "datasource": "xmpp_ofc",
+          "editable": true,
+          "error": false,
+          "fill": 1,
+          "grid": {
+            "leftLogBase": 1,
+            "leftMax": null,
+            "leftMin": null,
+            "rightLogBase": 1,
+            "rightMax": null,
+            "rightMin": null,
+            "threshold1": null,
+            "threshold1Color": "rgba(216, 200, 27, 0.27)",
+            "threshold2": null,
+            "threshold2Color": "rgba(234, 112, 112, 0.22)"
+          },
+          "id": 5,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "connected",
+          "percentage": false,
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "span": 6,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "target": "amoc_node_soe2016.amoc.times.message_ttd.mean",
+              "textEditor": true
+            },
+            {
+              "target": "amoc_node_soe2016.amoc.times.message_ttd.min",
+              "textEditor": true
+            },
+            {
+              "target": "amoc_node_soe2016.amoc.times.message_ttd.max",
+              "textEditor": true
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "XMPP Messages TTD",
           "tooltip": {
             "shared": true,
             "value_type": "cumulative"
@@ -260,7 +335,7 @@
           "points": false,
           "renderer": "flot",
           "seriesOverrides": [],
-          "span": 12,
+          "span": 6,
           "stack": false,
           "steppedLine": false,
           "targets": [
@@ -275,7 +350,7 @@
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "xmpp_ofc of messages",
+          "title": "xmpp_ofc of messages/10s",
           "tooltip": {
             "shared": true,
             "value_type": "cumulative"
@@ -287,6 +362,72 @@
             "short",
             "short"
           ]
+        },
+        {
+          "title": "Monitored/Blocked users in the 10s",
+          "error": false,
+          "span": 6,
+          "editable": true,
+          "type": "graph",
+          "id": 6,
+          "datasource": "xmpp_ofc",
+          "renderer": "flot",
+          "x-axis": true,
+          "y-axis": true,
+          "y_formats": [
+            "short",
+            "short"
+          ],
+          "grid": {
+            "leftLogBase": 1,
+            "leftMax": null,
+            "rightMax": null,
+            "leftMin": null,
+            "rightMin": null,
+            "rightLogBase": 1,
+            "threshold1": null,
+            "threshold2": null,
+            "threshold1Color": "rgba(216, 200, 27, 0.27)",
+            "threshold2Color": "rgba(234, 112, 112, 0.22)"
+          },
+          "lines": true,
+          "fill": 1,
+          "linewidth": 2,
+          "points": false,
+          "pointradius": 5,
+          "bars": false,
+          "stack": false,
+          "percentage": false,
+          "legend": {
+            "show": true,
+            "values": false,
+            "min": false,
+            "max": false,
+            "current": false,
+            "total": false,
+            "avg": false
+          },
+          "nullPointMode": "connected",
+          "steppedLine": false,
+          "tooltip": {
+            "value_type": "cumulative",
+            "shared": true
+          },
+          "timeFrom": null,
+          "timeShift": null,
+          "targets": [
+            {
+              "target": "xmp_ofc_soe2016.counters.simple_ids.monitored_clients.one",
+              "textEditor": true
+            },
+            {
+              "target": "xmp_ofc_soe2016.counters.simple_ids.blocked_clients.one",
+              "textEditor": true
+            }
+          ],
+          "aliasColors": {},
+          "seriesOverrides": [],
+          "links": []
         }
       ],
       "title": "New row"
@@ -328,7 +469,7 @@
     }
   ],
   "time": {
-    "from": "now-3m",
+    "from": "now-5m",
     "now": true,
     "to": "now"
   },
@@ -340,6 +481,6 @@
   },
   "refresh": "5s",
   "schemaVersion": 6,
-  "version": 8,
+  "version": 16,
   "links": []
 }

@@ -182,6 +182,21 @@ Check that the web interface of Grapana is accessible on your *host machine* via
 
 ![alt](img/soe2016_graphana.png)
 
+The graphana dashboard has the following graphs:
+* "Connections setups/failures/10s" - shows how many connections
+were setup/failed in the last 10 seconds
+* "Amoc users" - shows the number of the generated Amoc users
+* Amoc Users Messages/10s - show how many messages were sent/received
+by Amoc users in total in the last 10 seconds; if everything is balanced
+the two lines should be equal; if a client gets blocked less messages are
+delivered in a given time slot
+* "XMPP Messages TTD" - TTD stands for Time To Deliver and presents a histogram
+of the times related to delivering the messages
+* "xmpp_ofc of messages/10s" - shows the number of OpenFlow messages sent/received
+by the controller in the last 10 seconds
+* "Monitored/Blocked users in the last minute" - shows the number of users that
+the controller started monitoring/blocking in the last 10 seconds
+
 ## Running a sanity check
 
 All the below commands are invoked in the environment VM (the one provisioned with Vagrant).
